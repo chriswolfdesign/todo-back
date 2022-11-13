@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -14,9 +15,15 @@ import (
 )
 
 type TODOItem struct {
-	ID        string `json:"id"`
+	ID        int    `json:"id"`
 	Body      string `json:"body"`
 	Completed bool   `json:"completed"`
+}
+
+type UpdateRequest struct {
+	ID        int    `json:"id"`
+	Body      string `json:"body,omitempty"`
+	Completed bool   `json:"completed,omitempty"`
 }
 
 func main() {
@@ -26,13 +33,6 @@ func main() {
 	PSQL_DB := os.Getenv("PSQL_DB")
 	PSQL_TABLE := os.Getenv("PSQL_TABLE")
 	PSQL_HOST := os.Getenv("PSQL_HOST")
-
-	fmt.Println("PASSWORD:", PSQL_PASSWORD)
-	fmt.Println("USER:", PSQL_USER)
-	fmt.Println("PORT:", PSQL_PORT)
-	fmt.Println("DB:", PSQL_DB)
-	fmt.Println("TABLE:", PSQL_TABLE)
-	fmt.Println("HOST:", PSQL_HOST)
 
 	db, err := createDatabase(PSQL_HOST, PSQL_PORT, PSQL_USER, PSQL_PASSWORD, PSQL_DB)
 	defer db.Close()
@@ -73,22 +73,47 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET")
-		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
+		if r.Method == "GET" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET")
+			w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
 
-		id, err := strconv.Atoi(r.URL.Query().Get("id"))
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			id, err := strconv.Atoi(r.URL.Query().Get("id"))
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+
+			item, err := getItem(db, PSQL_TABLE, id)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(item)
 		}
 
-		item, err := getItem(db, PSQL_TABLE, id)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-		}
+		if r.Method == "UPDATE" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET")
+			w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(item)
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal("COULD NOT GET BODY OF REQUEST:", err)
+				return
+			}
+
+			var updateRequest UpdateRequest
+			json.Unmarshal(body, &updateRequest)
+
+			err = updateCompletionStatus(db, PSQL_TABLE, updateRequest)
+			if err != nil {
+				log.Println("COULD NOT UPDATE COMPLETION STATUS:", err)
+				w.WriteHeader(http.StatusBadRequest)
+			}
+
+			w.WriteHeader(http.StatusOK)
+		}
 	})
 
 	c := cors.New(cors.Options{
@@ -97,7 +122,6 @@ func main() {
 		AllowCredentials: true,
 		Debug:            true,
 	})
-
 	handler := c.Handler(mux)
 
 	log.Println("ATTEMPTING TO START SERVER")
@@ -154,4 +178,10 @@ func getItem(db *sql.DB, table string, id int) (TODOItem, error) {
 	}
 
 	return TODOItem{}, nil
+}
+
+func updateCompletionStatus(db *sql.DB, table string, updateRequest UpdateRequest) error {
+	sqlStatement := `UPDATE STREAM SET completed = $2 where id =$1`
+	_, err := db.Exec(sqlStatement, updateRequest.ID, updateRequest.Completed)
+	return err
 }
