@@ -2,14 +2,22 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 )
+
+type TODOItem struct {
+	ID        string `json:"id"`
+	Body      string `json:"body"`
+	Completed bool   `json:"completed"`
+}
 
 func main() {
 	PSQL_PASSWORD := os.Getenv("PSQL_PASSWORD")
@@ -42,8 +50,50 @@ func main() {
 		fmt.Fprintf(w, "Welcome to our TODO List")
 	})
 
+	mux.HandleFunc("/todos", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
+
+		list, err := getList(db, PSQL_TABLE)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(list)
+	})
+
+	mux.HandleFunc("/todo", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
+
+		id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		item, err := getItem(db, PSQL_TABLE, id)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(item)
+	})
+
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://foo.com", "http://foo.com:8080"},
+		AllowedOrigins:   []string{"*"},
+		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
 		Debug:            true,
 	})
@@ -62,4 +112,46 @@ func main() {
 func createDatabase(host, port, user, password, dbName string) (*sql.DB, error) {
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	return sql.Open("postgres", psqlconn)
+}
+
+func getList(db *sql.DB, table string) ([]TODOItem, error) {
+	rows, err := db.Query(fmt.Sprintf("select * from %s", table))
+	if err != nil {
+		return nil, err
+	}
+
+	list := []TODOItem{}
+
+	for rows.Next() {
+		var item TODOItem
+
+		err := rows.Scan(&item.ID, &item.Body, &item.Completed)
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, item)
+	}
+
+	return list, nil
+}
+
+func getItem(db *sql.DB, table string, id int) (TODOItem, error) {
+	rows, err := db.Query(fmt.Sprintf("select * from %s where id=%d", table, id))
+	if err != nil {
+		return TODOItem{}, err
+	}
+
+	for rows.Next() {
+		var item TODOItem
+
+		err := rows.Scan(&item.ID, &item.Body, &item.Completed)
+		if err != nil {
+			return TODOItem{}, err
+		}
+
+		return item, nil
+	}
+
+	return TODOItem{}, nil
 }
