@@ -8,3 +8,5 @@ services:
       - ./todo-data/data:/var/lib/postgresql/data
     env_file:
       - ./vars/todo-data.env
+    ports:
+      - "5432:5432"
