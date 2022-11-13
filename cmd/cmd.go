@@ -26,6 +26,11 @@ type UpdateRequest struct {
 	Completed bool   `json:"completed,omitempty"`
 }
 
+type CreateRequest struct {
+	Body      string `json:"body"`
+	Completed bool   `json:"completed"`
+}
+
 func main() {
 	PSQL_PASSWORD := os.Getenv("PSQL_PASSWORD")
 	PSQL_USER := os.Getenv("PSQL_USER")
@@ -94,7 +99,7 @@ func main() {
 
 		if r.Method == "UPDATE" {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET")
+			w.Header().Set("Access-Control-Allow-Methods", "UPDATE")
 			w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
 
 			body, err := io.ReadAll(r.Body)
@@ -114,6 +119,35 @@ func main() {
 
 			w.WriteHeader(http.StatusOK)
 		}
+	})
+
+	mux.HandleFunc("/createItem", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "PUT")
+		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal("COULD NOT GET BODY OF REQUEST:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		var createRequest CreateRequest
+		json.Unmarshal(body, &createRequest)
+
+		err = createItem(db, PSQL_TABLE, createRequest)
+		if err != nil {
+			log.Println("COULD NOTE CREATE ITEM:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	})
 
 	c := cors.New(cors.Options{
@@ -183,5 +217,11 @@ func getItem(db *sql.DB, table string, id int) (TODOItem, error) {
 func updateCompletionStatus(db *sql.DB, table string, updateRequest UpdateRequest) error {
 	sqlStatement := `UPDATE STREAM SET completed = $2 where id =$1`
 	_, err := db.Exec(sqlStatement, updateRequest.ID, updateRequest.Completed)
+	return err
+}
+
+func createItem(db *sql.DB, table string, createRequest CreateRequest) error {
+	sqlStatement := `INSERT INTO stream(body, completed) VALUES ($1, $2)`
+	_, err := db.Exec(sqlStatement, createRequest.Body, createRequest.Completed)
 	return err
 }
