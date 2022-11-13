@@ -31,6 +31,10 @@ type CreateRequest struct {
 	Completed bool   `json:"completed"`
 }
 
+type DeleteRequest struct {
+	ID int `json:"id"`
+}
+
 func main() {
 	PSQL_PASSWORD := os.Getenv("PSQL_PASSWORD")
 	PSQL_USER := os.Getenv("PSQL_USER")
@@ -150,6 +154,35 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	mux.HandleFunc("/deleteItem", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "PUT")
+		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal("COULD NOT GET BODY OF REQUEST:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		var deleteRequest DeleteRequest
+		json.Unmarshal(body, &deleteRequest)
+
+		err = deleteItem(db, PSQL_TABLE, deleteRequest)
+		if err != nil {
+			log.Println("COULD NOT DELETE ITEM:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	})
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedHeaders:   []string{"*"},
@@ -223,5 +256,11 @@ func updateCompletionStatus(db *sql.DB, table string, updateRequest UpdateReques
 func createItem(db *sql.DB, table string, createRequest CreateRequest) error {
 	sqlStatement := `INSERT INTO stream(body, completed) VALUES ($1, $2)`
 	_, err := db.Exec(sqlStatement, createRequest.Body, createRequest.Completed)
+	return err
+}
+
+func deleteItem(db *sql.DB, table string, deleteRequest DeleteRequest) error {
+	sqlStatement := `DELETE FROM stream WHERE id = $1`
+	_, err := db.Exec(sqlStatement, deleteRequest.ID)
 	return err
 }
