@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,30 +9,12 @@ import (
 	"os"
 	"strconv"
 
+	database "todo-back/db"
+	"todo-back/model"
+
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 )
-
-type TODOItem struct {
-	ID        int    `json:"id"`
-	Body      string `json:"body"`
-	Completed bool   `json:"completed"`
-}
-
-type UpdateRequest struct {
-	ID        int    `json:"id"`
-	Body      string `json:"body,omitempty"`
-	Completed bool   `json:"completed,omitempty"`
-}
-
-type CreateRequest struct {
-	Body      string `json:"body"`
-	Completed bool   `json:"completed"`
-}
-
-type DeleteRequest struct {
-	ID int `json:"id"`
-}
 
 func main() {
 	PSQL_PASSWORD := os.Getenv("PSQL_PASSWORD")
@@ -43,7 +24,7 @@ func main() {
 	PSQL_TABLE := os.Getenv("PSQL_TABLE")
 	PSQL_HOST := os.Getenv("PSQL_HOST")
 
-	db, err := createDatabase(PSQL_HOST, PSQL_PORT, PSQL_USER, PSQL_PASSWORD, PSQL_DB)
+	db, err := database.CreateDatabase(PSQL_HOST, PSQL_PORT, PSQL_USER, PSQL_PASSWORD, PSQL_DB)
 	defer db.Close()
 
 	if err != nil {
@@ -68,7 +49,7 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Methods", "GET")
 		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
 
-		list, err := getList(db, PSQL_TABLE)
+		list, err := db.GetList(PSQL_TABLE)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -92,7 +73,7 @@ func main() {
 				w.WriteHeader(http.StatusBadRequest)
 			}
 
-			item, err := getItem(db, PSQL_TABLE, id)
+			item, err := db.GetItem(PSQL_TABLE, id)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 			}
@@ -112,10 +93,10 @@ func main() {
 				return
 			}
 
-			var updateRequest UpdateRequest
+			var updateRequest model.UpdateRequest
 			json.Unmarshal(body, &updateRequest)
 
-			err = updateCompletionStatus(db, PSQL_TABLE, updateRequest)
+			err = db.UpdateCompletionStatus(PSQL_TABLE, updateRequest)
 			if err != nil {
 				log.Println("COULD NOT UPDATE COMPLETION STATUS:", err)
 				w.WriteHeader(http.StatusBadRequest)
@@ -141,10 +122,10 @@ func main() {
 			return
 		}
 
-		var createRequest CreateRequest
+		var createRequest model.CreateRequest
 		json.Unmarshal(body, &createRequest)
 
-		err = createItem(db, PSQL_TABLE, createRequest)
+		err = db.CreateItem(PSQL_TABLE, createRequest)
 		if err != nil {
 			log.Println("COULD NOTE CREATE ITEM:", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -170,10 +151,10 @@ func main() {
 			return
 		}
 
-		var deleteRequest DeleteRequest
+		var deleteRequest model.DeleteRequest
 		json.Unmarshal(body, &deleteRequest)
 
-		err = deleteItem(db, PSQL_TABLE, deleteRequest)
+		err = db.DeleteItem(PSQL_TABLE, deleteRequest)
 		if err != nil {
 			log.Println("COULD NOT DELETE ITEM:", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -198,69 +179,4 @@ func main() {
 		log.Fatal("ERROR STARTING SERVER:", err)
 		os.Exit(1)
 	}
-}
-
-func createDatabase(host, port, user, password, dbName string) (*sql.DB, error) {
-	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	return sql.Open("postgres", psqlconn)
-}
-
-func getList(db *sql.DB, table string) ([]TODOItem, error) {
-	rows, err := db.Query(fmt.Sprintf("select * from %s", table))
-	if err != nil {
-		return nil, err
-	}
-
-	list := []TODOItem{}
-
-	for rows.Next() {
-		var item TODOItem
-
-		err := rows.Scan(&item.ID, &item.Body, &item.Completed)
-		if err != nil {
-			return nil, err
-		}
-
-		list = append(list, item)
-	}
-
-	return list, nil
-}
-
-func getItem(db *sql.DB, table string, id int) (TODOItem, error) {
-	rows, err := db.Query(fmt.Sprintf("select * from %s where id=%d", table, id))
-	if err != nil {
-		return TODOItem{}, err
-	}
-
-	for rows.Next() {
-		var item TODOItem
-
-		err := rows.Scan(&item.ID, &item.Body, &item.Completed)
-		if err != nil {
-			return TODOItem{}, err
-		}
-
-		return item, nil
-	}
-
-	return TODOItem{}, nil
-}
-
-func updateCompletionStatus(db *sql.DB, table string, updateRequest UpdateRequest) error {
-	sqlStatement := `UPDATE STREAM SET completed = $2 where id =$1`
-	_, err := db.Exec(sqlStatement, updateRequest.ID, updateRequest.Completed)
-	return err
-}
-
-func createItem(db *sql.DB, table string, createRequest CreateRequest) error {
-	sqlStatement := `INSERT INTO stream(body, completed) VALUES ($1, $2)`
-	_, err := db.Exec(sqlStatement, createRequest.Body, createRequest.Completed)
-	return err
-}
-
-func deleteItem(db *sql.DB, table string, deleteRequest DeleteRequest) error {
-	sqlStatement := `DELETE FROM stream WHERE id = $1`
-	_, err := db.Exec(sqlStatement, deleteRequest.ID)
-	return err
 }
