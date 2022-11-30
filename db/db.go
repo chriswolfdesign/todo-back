@@ -16,7 +16,7 @@ type DatabaseManager struct {
 func CreateDatabase(host, port, user, password, dbName string) (*DatabaseManager, error) {
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", psqlconn)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +78,8 @@ func (dm *DatabaseManager) CreateItem(table string, createRequest model.CreateRe
 	return err
 }
 
-func (dm *DatabaseManager) DeleteItem(table string, deleteRequest model.DeleteRequest) error {
+func (dm *DatabaseManager) DeleteItem(table string, id int) error {
 	sqlStatement := `DELETE FROM stream WHERE id = $1`
-	_, err := dm.Exec(sqlStatement, deleteRequest.ID)
+	_, err := dm.Exec(sqlStatement, id)
 	return err
 }

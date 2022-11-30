@@ -52,7 +52,10 @@ func addGetAllItemsHandler(mux *http.ServeMux, dm *db.DatabaseManager, table str
 func addGetSingleTodoItemHandler(mux *http.ServeMux, dm *db.DatabaseManager, table string) {
 	mux.HandleFunc("/todo", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		if r.Method == "GET" {
@@ -102,7 +105,10 @@ func addGetSingleTodoItemHandler(mux *http.ServeMux, dm *db.DatabaseManager, tab
 func addCreateItemHandler(mux *http.ServeMux, dm *db.DatabaseManager, table string) {
 	mux.HandleFunc("/createItem", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -119,11 +125,15 @@ func addCreateItemHandler(mux *http.ServeMux, dm *db.DatabaseManager, table stri
 		var createRequest model.CreateRequest
 		json.Unmarshal(body, &createRequest)
 
-		err = dm.CreateItem(table, createRequest)
-		if err != nil {
-			log.Println("COULD NOT CREATE ITEM:", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
+		log.Printf("BODY: %+v\n", createRequest)
+
+		if createRequest.Body != "" {
+			err = dm.CreateItem(table, createRequest)
+			if err != nil {
+				log.Println("COULD NOT CREATE ITEM:", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -133,28 +143,25 @@ func addCreateItemHandler(mux *http.ServeMux, dm *db.DatabaseManager, table stri
 func addDeleteItemHandler(mux *http.ServeMux, dm *db.DatabaseManager, table string) {
 	mux.HandleFunc("/deleteItem", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "DELETE")
 		w.Header().Set("Allow-Access-Control-Headers", "text/plain; application/json")
 
-		body, err := io.ReadAll(r.Body)
+		id, err := strconv.Atoi(r.URL.Query().Get("id"))
 		if err != nil {
-			log.Fatal("COULD NOT GET BODY OF REQUEST:", err)
 			w.WriteHeader(http.StatusBadRequest)
-			return
 		}
 
-		var deleteRequest model.DeleteRequest
-		json.Unmarshal(body, &deleteRequest)
-
-		err = dm.DeleteItem(table, deleteRequest)
+		err = dm.DeleteItem(table, id)
 		if err != nil {
 			log.Println("COULD NOT DELETE ITEM:", err)
 			w.WriteHeader(http.StatusBadRequest)
-			return
 		}
 
 		w.WriteHeader(http.StatusOK)

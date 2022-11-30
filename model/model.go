@@ -16,7 +16,3 @@ type CreateRequest struct {
 	Body      string `json:"body"`
 	Completed bool   `json:"completed"`
 }
-
-type DeleteRequest struct {
-	ID int `json:"id"`
-}
