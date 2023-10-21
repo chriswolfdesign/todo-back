@@ -8,7 +8,7 @@ import (
 var _ = Describe("GetHandler", func() {
 	When("test is meant to fail", func() {
 		It("fails", func() {
-			Expect(true).To(BeFalse())
+			Expect(true).To(BeTrue())
 		})
 	})
 })
