@@ -9,6 +9,5 @@ import (
 
 func GetTest(c echo.Context) error {
 	log.Println("/test GET endpoint has been reached")
-	c.String(http.StatusOK, "Echo server running correctly")
-	return nil
+	return c.String(http.StatusOK, "Echo server running correctly")
 }
