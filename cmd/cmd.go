@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"os"
 	"todo-back/config"
 	database "todo-back/db"
 	"todo-back/handlers"
@@ -17,7 +19,11 @@ func main() {
 
 	conf := config.ReadConfigFile(CONFIG_PATH)
 
-	database.GenerateDatabaseConnection(conf)
+	_, err := database.GenerateDatabaseConnection(conf)
+	if err != nil {
+		log.Fatal("Unable to generate database connection:", err)
+		os.Exit(1)
+	}
 
 	e.GET("/test", handlers.GetTest)
 	e.Logger.Fatal(e.Start(":3000"))
