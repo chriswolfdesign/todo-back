@@ -10,6 +10,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
+//counterfeiter:generate . DatabaseManagerInterface
 type DatabaseManagerInterface interface {
 	EstablishDatabaseConnection(conf config.Config) error
 	GetAllTodos() ([]model.Todo, error)

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -16,11 +15,11 @@ type Config struct {
 	DBName   string `yaml:"dbname"`
 }
 
-func ReadConfigFile(fileName string) Config {
-	yamlFile, err := ioutil.ReadFile(fileName)
+func ReadConfigFile(fileName string) (*Config, error) {
+	yamlFile, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Fatal("Unable to read file:", err)
-		os.Exit(1)
+		return nil, err
 	}
 
 	conf := Config{}
@@ -28,8 +27,8 @@ func ReadConfigFile(fileName string) Config {
 	err = yaml.Unmarshal(yamlFile, &conf)
 	if err != nil {
 		log.Fatal("Unable to unmarshal config:", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	return conf
+	return &conf, nil
 }

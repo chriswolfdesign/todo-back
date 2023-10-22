@@ -17,13 +17,15 @@ const (
 func main() {
 	e := echo.New()
 
-	conf := config.ReadConfigFile(CONFIG_PATH)
+	conf, err := config.ReadConfigFile(CONFIG_PATH)
+	if err != nil {
+		log.Println("unable to open config")
+		os.Exit(1)
+	}
 
-	var dm database.DatabaseManagerInterface
+	dm := &database.DatabaseManager{}
 
-	dm = &database.DatabaseManager{}
-
-	err := dm.EstablishDatabaseConnection(conf)
+	err = dm.EstablishDatabaseConnection(*conf)
 	if err != nil {
 		log.Fatal("Unable to establish database connection:", err)
 		os.Exit(1)

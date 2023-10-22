@@ -14,7 +14,10 @@ func GetAllHandler(ctx echo.Context, dm database.DatabaseManagerInterface) func(
 		todos, err := dm.GetAllTodos()
 		if err != nil {
 			log.Println("Unable to get all todos from handler:", err)
-			ctx.String(http.StatusInternalServerError, "Unable to retrieve list of todo items")
+			contextError := ctx.String(http.StatusInternalServerError, "Unable to retrieve list of todo items")
+			if contextError != nil {
+				return contextError
+			}
 			return err
 		}
 
