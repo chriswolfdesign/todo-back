@@ -30,10 +30,7 @@ func main() {
 	}
 	defer dm.CloseDatabase()
 
-	todos, err := dm.GetAllTodos()
-
-	log.Printf("%+v\n", todos)
-
 	e.GET("/test", handlers.GetTest)
+	e.GET("/todos", handlers.GetAllHandler(e.AcquireContext(), dm))
 	e.Logger.Fatal(e.Start(":3000"))
 }
