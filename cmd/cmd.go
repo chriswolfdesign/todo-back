@@ -28,6 +28,11 @@ func main() {
 		log.Fatal("Unable to establish database connection:", err)
 		os.Exit(1)
 	}
+	defer dm.CloseDatabase()
+
+	todos, err := dm.GetAllTodos()
+
+	log.Printf("%+v\n", todos)
 
 	e.GET("/test", handlers.GetTest)
 	e.Logger.Fatal(e.Start(":3000"))

@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log"
 	"todo-back/config"
+	"todo-back/model"
 
 	_ "github.com/lib/pq"
 )
 
 type DatabaseManagerInterface interface {
 	EstablishDatabaseConnection(conf config.Config) error
+	GetAllTodos() ([]model.Todo, error)
+	CloseDatabase()
 }
 
 type DatabaseManager struct {
@@ -25,7 +28,6 @@ func (dm *DatabaseManager) EstablishDatabaseConnection(conf config.Config) error
 		log.Println("Could not connect to database:", err)
 		return err
 	}
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
@@ -37,4 +39,32 @@ func (dm *DatabaseManager) EstablishDatabaseConnection(conf config.Config) error
 	dm.db = db
 
 	return nil
+}
+
+func (dm *DatabaseManager) GetAllTodos() ([]model.Todo, error) {
+	rows, err := dm.db.Query(`select * from todos`)
+	if err != nil {
+		log.Println("Unable to get all todos from database:", err)
+		return nil, err
+	}
+
+	todos := []model.Todo{}
+
+	for rows.Next() {
+		todo := model.Todo{}
+
+		err = rows.Scan(&todo.ID, &todo.Text, &todo.Completed)
+		if err != nil {
+			log.Println("Unable to get specific todo:", err)
+			return nil, err
+		}
+
+		todos = append(todos, todo)
+	}
+
+	return todos, nil
+}
+
+func (dm *DatabaseManager) CloseDatabase() {
+	dm.db.Close()
 }
