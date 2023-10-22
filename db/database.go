@@ -16,6 +16,7 @@ import (
 type DatabaseManagerInterface interface {
 	EstablishDatabaseConnection(conf config.Config) error
 	GetAllTodos() ([]model.Todo, error)
+	GetTodo(id int) (*model.Todo, error)
 	CloseDatabase()
 }
 
@@ -78,6 +79,39 @@ func (dm *DatabaseManager) GetAllTodos() ([]model.Todo, error) {
 	}
 
 	return todos, nil
+}
+
+func (dm *DatabaseManager) GetTodo(id int) (*model.Todo, error) {
+	tx, err := dm.db.Begin()
+	if err != nil {
+		log.Println("unable to creae transaction in GetTodo handler:", err)
+		return nil, err
+	}
+
+	query := `select * from todos where id=$1`
+	rows, err := tx.Query(query, id)
+	if err != nil {
+		log.Printf("unable to get todo %d from database: %s\n", id, err)
+		return nil, err
+	}
+
+	todo := model.Todo{}
+
+	for rows.Next() {
+		err = rows.Scan(&todo.ID, &todo.Text, &todo.Completed)
+		if err != nil {
+			log.Printf("unable to scan todo %d from database: %s\n", id, err)
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("unable to commit transaction:", err)
+		return nil, err
+	}
+
+	return &todo, nil
 }
 
 func (dm *DatabaseManager) CloseDatabase() {

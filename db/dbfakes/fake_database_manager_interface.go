@@ -36,6 +36,19 @@ type FakeDatabaseManagerInterface struct {
 		result1 []model.Todo
 		result2 error
 	}
+	GetTodoStub        func(int) (*model.Todo, error)
+	getTodoMutex       sync.RWMutex
+	getTodoArgsForCall []struct {
+		arg1 int
+	}
+	getTodoReturns struct {
+		result1 *model.Todo
+		result2 error
+	}
+	getTodoReturnsOnCall map[int]struct {
+		result1 *model.Todo
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -181,6 +194,70 @@ func (fake *FakeDatabaseManagerInterface) GetAllTodosReturnsOnCall(i int, result
 	}{result1, result2}
 }
 
+func (fake *FakeDatabaseManagerInterface) GetTodo(arg1 int) (*model.Todo, error) {
+	fake.getTodoMutex.Lock()
+	ret, specificReturn := fake.getTodoReturnsOnCall[len(fake.getTodoArgsForCall)]
+	fake.getTodoArgsForCall = append(fake.getTodoArgsForCall, struct {
+		arg1 int
+	}{arg1})
+	stub := fake.GetTodoStub
+	fakeReturns := fake.getTodoReturns
+	fake.recordInvocation("GetTodo", []interface{}{arg1})
+	fake.getTodoMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeDatabaseManagerInterface) GetTodoCallCount() int {
+	fake.getTodoMutex.RLock()
+	defer fake.getTodoMutex.RUnlock()
+	return len(fake.getTodoArgsForCall)
+}
+
+func (fake *FakeDatabaseManagerInterface) GetTodoCalls(stub func(int) (*model.Todo, error)) {
+	fake.getTodoMutex.Lock()
+	defer fake.getTodoMutex.Unlock()
+	fake.GetTodoStub = stub
+}
+
+func (fake *FakeDatabaseManagerInterface) GetTodoArgsForCall(i int) int {
+	fake.getTodoMutex.RLock()
+	defer fake.getTodoMutex.RUnlock()
+	argsForCall := fake.getTodoArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeDatabaseManagerInterface) GetTodoReturns(result1 *model.Todo, result2 error) {
+	fake.getTodoMutex.Lock()
+	defer fake.getTodoMutex.Unlock()
+	fake.GetTodoStub = nil
+	fake.getTodoReturns = struct {
+		result1 *model.Todo
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeDatabaseManagerInterface) GetTodoReturnsOnCall(i int, result1 *model.Todo, result2 error) {
+	fake.getTodoMutex.Lock()
+	defer fake.getTodoMutex.Unlock()
+	fake.GetTodoStub = nil
+	if fake.getTodoReturnsOnCall == nil {
+		fake.getTodoReturnsOnCall = make(map[int]struct {
+			result1 *model.Todo
+			result2 error
+		})
+	}
+	fake.getTodoReturnsOnCall[i] = struct {
+		result1 *model.Todo
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeDatabaseManagerInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -190,6 +267,8 @@ func (fake *FakeDatabaseManagerInterface) Invocations() map[string][][]interface
 	defer fake.establishDatabaseConnectionMutex.RUnlock()
 	fake.getAllTodosMutex.RLock()
 	defer fake.getAllTodosMutex.RUnlock()
+	fake.getTodoMutex.RLock()
+	defer fake.getTodoMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
