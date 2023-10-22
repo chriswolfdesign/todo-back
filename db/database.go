@@ -45,7 +45,13 @@ func (dm *DatabaseManager) EstablishDatabaseConnection(conf config.Config) error
 }
 
 func (dm *DatabaseManager) GetAllTodos() ([]model.Todo, error) {
-	rows, err := dm.db.Query(`select * from todos`)
+	tx, err := dm.db.Begin()
+	if err != nil {
+		log.Println("unable to create transaction:", err)
+		return nil, err
+	}
+
+	rows, err := tx.Query(`select * from todos`)
 	if err != nil {
 		log.Println("Unable to get all todos from database:", err)
 		return nil, err
@@ -63,6 +69,12 @@ func (dm *DatabaseManager) GetAllTodos() ([]model.Todo, error) {
 		}
 
 		todos = append(todos, todo)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("unable to commit transaction:", err)
+		return nil, err
 	}
 
 	return todos, nil
