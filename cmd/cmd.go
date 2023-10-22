@@ -34,5 +34,6 @@ func main() {
 
 	e.GET("/test", handlers.GetTest)
 	e.GET("/todos", handlers.GetAllHandler(e.AcquireContext(), dm))
+	e.GET("/todo/:id", handlers.GetHandler(e.AcquireContext(), dm))
 	e.Logger.Fatal(e.Start(":3000"))
 }
