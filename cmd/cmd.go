@@ -19,9 +19,13 @@ func main() {
 
 	conf := config.ReadConfigFile(CONFIG_PATH)
 
-	_, err := database.GenerateDatabaseConnection(conf)
+	var dm database.DatabaseManagerInterface
+
+	dm = &database.DatabaseManager{}
+
+	err := dm.EstablishDatabaseConnection(conf)
 	if err != nil {
-		log.Fatal("Unable to generate database connection:", err)
+		log.Fatal("Unable to establish database connection:", err)
 		os.Exit(1)
 	}
 
