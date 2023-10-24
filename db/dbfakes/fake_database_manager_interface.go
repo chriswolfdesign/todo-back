@@ -27,6 +27,17 @@ type FakeDatabaseManagerInterface struct {
 		result1 *model.Todo
 		result2 error
 	}
+	DeleteTodoStub        func(int) error
+	deleteTodoMutex       sync.RWMutex
+	deleteTodoArgsForCall []struct {
+		arg1 int
+	}
+	deleteTodoReturns struct {
+		result1 error
+	}
+	deleteTodoReturnsOnCall map[int]struct {
+		result1 error
+	}
 	EstablishDatabaseConnectionStub        func(config.Config) error
 	establishDatabaseConnectionMutex       sync.RWMutex
 	establishDatabaseConnectionArgsForCall []struct {
@@ -154,6 +165,67 @@ func (fake *FakeDatabaseManagerInterface) CreateTodoReturnsOnCall(i int, result1
 		result1 *model.Todo
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeDatabaseManagerInterface) DeleteTodo(arg1 int) error {
+	fake.deleteTodoMutex.Lock()
+	ret, specificReturn := fake.deleteTodoReturnsOnCall[len(fake.deleteTodoArgsForCall)]
+	fake.deleteTodoArgsForCall = append(fake.deleteTodoArgsForCall, struct {
+		arg1 int
+	}{arg1})
+	stub := fake.DeleteTodoStub
+	fakeReturns := fake.deleteTodoReturns
+	fake.recordInvocation("DeleteTodo", []interface{}{arg1})
+	fake.deleteTodoMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeDatabaseManagerInterface) DeleteTodoCallCount() int {
+	fake.deleteTodoMutex.RLock()
+	defer fake.deleteTodoMutex.RUnlock()
+	return len(fake.deleteTodoArgsForCall)
+}
+
+func (fake *FakeDatabaseManagerInterface) DeleteTodoCalls(stub func(int) error) {
+	fake.deleteTodoMutex.Lock()
+	defer fake.deleteTodoMutex.Unlock()
+	fake.DeleteTodoStub = stub
+}
+
+func (fake *FakeDatabaseManagerInterface) DeleteTodoArgsForCall(i int) int {
+	fake.deleteTodoMutex.RLock()
+	defer fake.deleteTodoMutex.RUnlock()
+	argsForCall := fake.deleteTodoArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeDatabaseManagerInterface) DeleteTodoReturns(result1 error) {
+	fake.deleteTodoMutex.Lock()
+	defer fake.deleteTodoMutex.Unlock()
+	fake.DeleteTodoStub = nil
+	fake.deleteTodoReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeDatabaseManagerInterface) DeleteTodoReturnsOnCall(i int, result1 error) {
+	fake.deleteTodoMutex.Lock()
+	defer fake.deleteTodoMutex.Unlock()
+	fake.DeleteTodoStub = nil
+	if fake.deleteTodoReturnsOnCall == nil {
+		fake.deleteTodoReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deleteTodoReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeDatabaseManagerInterface) EstablishDatabaseConnection(arg1 config.Config) error {
@@ -344,6 +416,8 @@ func (fake *FakeDatabaseManagerInterface) Invocations() map[string][][]interface
 	defer fake.closeDatabaseMutex.RUnlock()
 	fake.createTodoMutex.RLock()
 	defer fake.createTodoMutex.RUnlock()
+	fake.deleteTodoMutex.RLock()
+	defer fake.deleteTodoMutex.RUnlock()
 	fake.establishDatabaseConnectionMutex.RLock()
 	defer fake.establishDatabaseConnectionMutex.RUnlock()
 	fake.getAllTodosMutex.RLock()
