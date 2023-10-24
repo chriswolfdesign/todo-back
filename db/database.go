@@ -17,6 +17,7 @@ type DatabaseManagerInterface interface {
 	EstablishDatabaseConnection(conf config.Config) error
 	GetAllTodos() ([]model.Todo, error)
 	GetTodo(id int) (*model.Todo, error)
+	CreateTodo(text string, completed bool) (*model.Todo, error)
 	CloseDatabase()
 }
 
@@ -84,7 +85,7 @@ func (dm *DatabaseManager) GetAllTodos() ([]model.Todo, error) {
 func (dm *DatabaseManager) GetTodo(id int) (*model.Todo, error) {
 	tx, err := dm.db.Begin()
 	if err != nil {
-		log.Println("unable to creae transaction in GetTodo handler:", err)
+		log.Println("unable to create transaction in GetTodo handler:", err)
 		return nil, err
 	}
 
@@ -108,6 +109,31 @@ func (dm *DatabaseManager) GetTodo(id int) (*model.Todo, error) {
 	err = tx.Commit()
 	if err != nil {
 		log.Println("unable to commit transaction:", err)
+		return nil, err
+	}
+
+	return &todo, nil
+}
+
+func (dm *DatabaseManager) CreateTodo(text string, completed bool) (*model.Todo, error) {
+	tx, err := dm.db.Begin()
+	if err != nil {
+		log.Println("unable to create transaction in CreateTodo handler:", err)
+		return nil, err
+	}
+
+	query := `insert into todos (text, completed) values ($1, $2) returning id, text, completed`
+	todo := model.Todo{}
+
+	err = tx.QueryRow(query, text, completed).Scan(&todo.ID, &todo.Text, &todo.Completed)
+	if err != nil {
+		log.Println("unable to scan when inserting into database:", err)
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("unable to commit insertion to database:", err)
 		return nil, err
 	}
 
