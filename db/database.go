@@ -85,7 +85,7 @@ func (dm *DatabaseManager) GetAllTodos() ([]model.Todo, error) {
 func (dm *DatabaseManager) GetTodo(id int) (*model.Todo, error) {
 	tx, err := dm.db.Begin()
 	if err != nil {
-		log.Println("unable to creae transaction in GetTodo handler:", err)
+		log.Println("unable to create transaction in GetTodo handler:", err)
 		return nil, err
 	}
 
@@ -128,6 +128,12 @@ func (dm *DatabaseManager) CreateTodo(text string, completed bool) (*model.Todo,
 	err = tx.QueryRow(query, text, completed).Scan(&todo.ID, &todo.Text, &todo.Completed)
 	if err != nil {
 		log.Println("unable to scan when inserting into database:", err)
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("unable to commit insertion to database:", err)
 		return nil, err
 	}
 
