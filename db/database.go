@@ -19,6 +19,7 @@ type DatabaseManagerInterface interface {
 	GetTodo(id int) (*model.Todo, error)
 	CreateTodo(text string, completed bool) (*model.Todo, error)
 	DeleteTodo(id int) error
+	UpdateTodo(id int, text string, completed bool) (*model.Todo, error)
 	CloseDatabase()
 }
 
@@ -166,4 +167,29 @@ func (dm *DatabaseManager) DeleteTodo(id int) error {
 	}
 
 	return nil
+}
+
+func (dm *DatabaseManager) UpdateTodo(id int, text string, completed bool) (*model.Todo, error) {
+	tx, err := dm.db.Begin()
+	if err != nil {
+		log.Println("unable to create transaction in UpdateTodo handler:", err)
+		return nil, err
+	}
+
+	query := `update todos set text = $1, completed = $2 where id = $3 returning id, text, completed`
+	todo := model.Todo{}
+
+	err = tx.QueryRow(query, text, completed, id).Scan(&todo.ID, &todo.Text, &todo.Completed)
+	if err != nil {
+		log.Printf("unable to scan when updating ID %d in database: %s\n", id, err)
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("unable to commit update ID %d to database: %s\n", id, err)
+		return nil, err
+	}
+
+	return &todo, nil
 }
