@@ -18,6 +18,7 @@ type DatabaseManagerInterface interface {
 	GetAllTodos() ([]model.Todo, error)
 	GetTodo(id int) (*model.Todo, error)
 	CreateTodo(text string, completed bool) (*model.Todo, error)
+	DeleteTodo(id int) error
 	CloseDatabase()
 }
 
@@ -142,4 +143,27 @@ func (dm *DatabaseManager) CreateTodo(text string, completed bool) (*model.Todo,
 
 func (dm *DatabaseManager) CloseDatabase() {
 	dm.db.Close()
+}
+
+func (dm *DatabaseManager) DeleteTodo(id int) error {
+	tx, err := dm.db.Begin()
+	if err != nil {
+		log.Println("unable to create transaction in DeleteTodo handler:", err)
+		return err
+	}
+
+	query := `delete from todos where id=$1`
+	_, err = tx.Query(query, id)
+	if err != nil {
+		log.Printf("unable to delete todo %d from database: %s\n", id, err)
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("unable to commit transaction:", err)
+		return err
+	}
+
+	return nil
 }
