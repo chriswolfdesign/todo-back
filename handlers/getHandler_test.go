@@ -25,21 +25,21 @@ var _ = Describe("GetHandler", func() {
 
 	BeforeEach(func() {
 		e = echo.New()
+
+		req = httptest.NewRequest(http.MethodGet, "/todo/1", nil)
+
+		rec = httptest.NewRecorder()
+		ctx = e.NewContext(req, rec)
+
+		ctx.SetPath("/:id")
+		ctx.SetParamNames("id")
+		ctx.SetParamValues("1")
+
+		dm = dbfakes.FakeDatabaseManagerInterface{}
 	})
 
 	When("DB handler correctly returns the todo item", func() {
 		BeforeEach(func() {
-			req = httptest.NewRequest(http.MethodGet, "/todo/1", nil)
-
-			rec = httptest.NewRecorder()
-			ctx = e.NewContext(req, rec)
-
-			ctx.SetPath("/:id")
-			ctx.SetParamNames("id")
-			ctx.SetParamValues("1")
-
-			dm = dbfakes.FakeDatabaseManagerInterface{}
-
 			todo := model.Todo{
 				ID:        1,
 				Text:      "first item",
@@ -60,16 +60,6 @@ var _ = Describe("GetHandler", func() {
 
 	When("an ID is requested that does not exist", func() {
 		BeforeEach(func() {
-			req = httptest.NewRequest(http.MethodGet, "/todo/5", nil)
-
-			rec = httptest.NewRecorder()
-			ctx = e.NewContext(req, rec)
-
-			ctx.SetPath("/:id")
-			ctx.SetParamNames("id")
-			ctx.SetParamValues("5")
-
-			dm = dbfakes.FakeDatabaseManagerInterface{}
 
 			todo := model.Todo{}
 
