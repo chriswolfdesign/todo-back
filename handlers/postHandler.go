@@ -12,7 +12,7 @@ import (
 
 func CreateHandler(ctx echo.Context, dm database.DatabaseManagerInterface) func(c echo.Context) error {
 	return func(ctx echo.Context) error {
-		postRequest := model.PostRequest{}
+		postRequest := model.Request{}
 
 		err := ctx.Bind(&postRequest)
 		if err != nil {
