@@ -34,9 +34,9 @@ func main() {
 
 	e.GET("/test", handlers.GetTest)
 	e.GET("/todos", handlers.GetAllHandler(e.AcquireContext(), dm))
-	e.GET("/todo/:id", handlers.GetHandler(e.AcquireContext(), dm))
-	e.POST("/todo", handlers.CreateHandler(e.AcquireContext(), dm))
-	e.DELETE("/todo/:id", handlers.DeleteHandler(e.AcquireContext(), dm))
-	e.PATCH("/todo/:id", handlers.PatchHandler(e.AcquireContext(), dm))
+	e.GET("/todos/:id", handlers.GetHandler(e.AcquireContext(), dm))
+	e.POST("/todos", handlers.CreateHandler(e.AcquireContext(), dm))
+	e.DELETE("/todos/:id", handlers.DeleteHandler(e.AcquireContext(), dm))
+	e.PATCH("/todos/:id", handlers.PatchHandler(e.AcquireContext(), dm))
 	e.Logger.Fatal(e.Start(":3000"))
 }
