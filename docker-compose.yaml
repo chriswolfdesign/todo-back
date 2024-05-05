@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  todo-data:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    networks:
+      - todo-app
+    volumes:
+      - mongo-data:/data/db
+
+networks:
+  todo-app:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
