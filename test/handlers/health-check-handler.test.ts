@@ -17,10 +17,4 @@ describe("Health check handler tests", () => {
             message: "healthy"
         });
     });
-
-    describe("should fail", () => {
-        it("failing", () => {
-            expect(1 + 1).toBe(2);
-        });
-    });
 });
