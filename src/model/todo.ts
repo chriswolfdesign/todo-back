@@ -9,6 +9,8 @@ const TodoSchema = new mongoose.Schema({
         type: Boolean,
         required: true
     }
+}, {
+    versionKey: false
 });
 
 const Todo = mongoose.model("Todo", TodoSchema, "todos");

@@ -2,13 +2,15 @@ import Todo from "../../src/model/todo";
 import {createRequest, createResponse} from "node-mocks-http";
 import getAllTodoHandler from "../../src/handlers/get-all-todo-handler";
 import statusCode from "http-status-codes";
+import {mock} from "sinon";
 
 const mockingoose = require("mockingoose");
 
 describe("Get all todo handler tests", () => {
     describe("there are no todos", () => {
         it("should return an empty array", async () => {
-            mockingoose(Todo).toReturn([], "find");
+            let TodoMock = mock(Todo);
+            TodoMock.expects("find").returns([]);
 
             const mockRequest = createRequest({
                 method: "GET",
@@ -22,6 +24,8 @@ describe("Get all todo handler tests", () => {
             expect(mockResponse._getJSONData()).toStrictEqual({
                 todos: []
             });
+
+            TodoMock.restore();
         });
     });
 
@@ -35,8 +39,9 @@ describe("Get all todo handler tests", () => {
                     }
                 ];
 
-            mockingoose(Todo).reset();
-            mockingoose(Todo).toReturn(doc, "find");
+            let TodoMock = mock(Todo);
+
+            TodoMock.expects("find").returns(doc);
 
             const mockRequest = createRequest({
                 method: "GET",
@@ -48,6 +53,8 @@ describe("Get all todo handler tests", () => {
             await getAllTodoHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.OK);
             expect(mockResponse._getJSONData()).toStrictEqual({todos: doc});
+
+            TodoMock.restore();
         });
     });
 
@@ -66,8 +73,8 @@ describe("Get all todo handler tests", () => {
                 }
             ];
 
-            mockingoose(Todo).reset();
-            mockingoose(Todo).toReturn(doc, "find");
+            let TodoMock = mock(Todo);
+            TodoMock.expects("find").returns(doc);
 
             const mockRequest = createRequest({
                 method: "GET",
@@ -79,6 +86,8 @@ describe("Get all todo handler tests", () => {
             await getAllTodoHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.OK);
             expect(mockResponse._getJSONData()).toStrictEqual({todos: doc});
+
+            TodoMock.restore();
         });
     });
 });
