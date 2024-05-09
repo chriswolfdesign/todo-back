@@ -7,6 +7,7 @@ import getAllTodoHandler from "./handlers/get-all-todo-handler";
 import getSingleTodoHandler from "./handlers/get-single-todo-handler";
 import createTodoHandler from "./handlers/create-todo-handler";
 import updateHandler from "./handlers/update-handler";
+import deleteTodoHandler from "./handlers/delete-todo-handler";
 
 dotenv.config();
 
@@ -26,6 +27,8 @@ app.get("/todos/:id", getSingleTodoHandler);
 app.post("/todos", createTodoHandler);
 
 app.put("/todos/:id", updateHandler);
+
+app.delete("/todos/:id", deleteTodoHandler);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
