@@ -1,5 +1,5 @@
 import {createRequest, createResponse} from "node-mocks-http";
-import updateCompletionHandler from "../../src/handlers/update-completion-handler";
+import updateHandler from "../../src/handlers/update-handler";
 import statusCode from "http-status-codes";
 import {mock} from "sinon";
 import Todo from "../../src/model/todo";
@@ -17,15 +17,15 @@ describe("update completion handler tests", () => {
 
             const mockResponse = createResponse();
 
-            await updateCompletionHandler(mockRequest, mockResponse);
+            await updateHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.BAD_REQUEST);
             expect(mockResponse._getJSONData()).toStrictEqual({
-                message: "ID url parameter and completed body field are required"
+                message: "ID url parameter and text or completed body field are required"
             });
         });
     });
 
-    describe("completion field is missing from the body", () => {
+    describe("text and completion field is missing from the body", () => {
         it("returns bad request and error message", async () => {
             const mockRequest = createRequest({
                 method: "PUT",
@@ -37,10 +37,10 @@ describe("update completion handler tests", () => {
 
             const mockResponse = createResponse();
 
-            await updateCompletionHandler(mockRequest, mockResponse);
+            await updateHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.BAD_REQUEST);
             expect(mockResponse._getJSONData()).toStrictEqual({
-                message: "ID url parameter and completed body field are required"
+                message: "ID url parameter and text or completed body field are required"
             });
         });
     });
@@ -54,10 +54,10 @@ describe("update completion handler tests", () => {
 
             const mockResponse = createResponse();
 
-            await updateCompletionHandler(mockRequest, mockResponse);
+            await updateHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.BAD_REQUEST);
             expect(mockResponse._getJSONData()).toStrictEqual({
-                message: "ID url parameter and completed body field are required"
+                message: "ID url parameter and text or completed body field are required"
             });
         });
     });
@@ -80,7 +80,7 @@ describe("update completion handler tests", () => {
 
             const mockResponse = createResponse();
 
-            await updateCompletionHandler(mockRequest, mockResponse);
+            await updateHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.CONFLICT);
             expect(mockResponse._getJSONData()).toStrictEqual({
                 message: "could not make update"
@@ -90,7 +90,7 @@ describe("update completion handler tests", () => {
         });
     });
 
-    describe("successfully updates todo item", () => {
+    describe("successfully updates todo item when text is updated", () => {
         it("returns status ok with updated todo item", async () => {
             const doc = {
                 _id: "6637e890ada4275ce9ec5a26",
@@ -114,9 +114,76 @@ describe("update completion handler tests", () => {
 
             const mockResponse = createResponse();
 
-            await updateCompletionHandler(mockRequest, mockResponse);
+            await updateHandler(mockRequest, mockResponse);
             expect(mockResponse.statusCode).toBe(statusCode.OK);
             expect(mockResponse._getJSONData()).toStrictEqual(doc);
+
+            TodoMock.restore();
+        });
+    });
+
+    describe("successfully updates todo item when completed is updated", () => {
+        it("returns status ok with updated todo item", async () => {
+            const doc = {
+                _id: "6637e890ada4275ce9ec5a26",
+                text: "testing",
+                completed: false
+            };
+
+            let TodoMock = mock(Todo);
+            TodoMock.expects("findOneAndUpdate").returns(doc);
+
+            const mockRequest = createRequest({
+                method: "PUT",
+                url: "/todos",
+                params: {
+                    id: "6637e890ada4275ce9ec5a26"
+                },
+                body: {
+                    completed: false
+                }
+            });
+
+            const mockResponse = createResponse();
+
+            await updateHandler(mockRequest, mockResponse);
+            expect(mockResponse.statusCode).toBe(statusCode.OK);
+            expect(mockResponse._getJSONData()).toStrictEqual(doc);
+
+            TodoMock.restore();
+        });
+    });
+
+    describe("successfully updates todo item when both fields are updated", () => {
+        it("returns stats ok with updated todo item", async () => {
+            const doc = {
+                _id: "6637e890ada4275ce9ec5a26",
+                text: "testing",
+                completed: false
+            };
+
+            let TodoMock = mock(Todo);
+            TodoMock.expects("findOneAndUpdate").returns(doc);
+
+            const mockRequest = createRequest({
+                method: "PUT",
+                url: "/todos",
+                params: {
+                    id: "6637e890ada4275ce9ec5a26"
+                },
+                body: {
+                    text: "testing",
+                    completed: false
+                }
+            });
+
+            const mockResponse = createResponse();
+
+            await updateHandler(mockRequest, mockResponse);
+            expect(mockResponse.statusCode).toBe(statusCode.OK);
+            expect(mockResponse._getJSONData()).toStrictEqual(doc);
+
+            TodoMock.restore();
         });
     });
 });

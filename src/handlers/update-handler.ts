@@ -2,28 +2,21 @@ import {Request, Response} from "express";
 import statusCode from "http-status-codes";
 import Todo from "../model/todo";
 
-export default async function updateCompletionHandler(req: Request, res: Response) {
-    const id = req.params.id;
-    const completed = req.body.completed;
-
+export default async function updateHandler(req: Request, res: Response) {
     res.setHeader("Content-Type", "application/json");
 
-    if (id === undefined || completed === undefined) {
+    if (!isValidRequest(req)) {
         res.status(statusCode.BAD_REQUEST).json({
-            message: "ID url parameter and completed body field are required"
+            message: "ID url parameter and text or completed body field are required"
         });
         return;
     }
 
     const filter = {
-        _id: id
+        _id: req.params.id
     };
 
-    const update = {
-        completed
-    };
-
-    let result = await Todo.findOneAndUpdate(filter, update, {new: true});
+    let result = await Todo.findOneAndUpdate(filter, req.body, {new: true});
 
     if (result === null) {
         res.status(statusCode.CONFLICT).json({
@@ -33,4 +26,8 @@ export default async function updateCompletionHandler(req: Request, res: Respons
     }
 
     res.status(statusCode.OK).json(result);
+}
+
+function isValidRequest(req: any): boolean {
+    return req.params.id !== undefined && (req.body.text !== undefined || req.body.completed !== undefined)
 }
