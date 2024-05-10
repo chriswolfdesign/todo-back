@@ -13,13 +13,12 @@ dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 2000;
+const mongoUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/local";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-mongoose
-  .connect("mongodb://127.0.0.1:27017/local")
-  .then(() => console.log("Connected to database"));
+mongoose.connect(mongoUrl).then((_) => console.log("Connected to database"));
 
 app.get("/", indexHandler);
 app.get("/check", healthCheckHandler);
