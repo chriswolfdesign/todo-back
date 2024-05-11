@@ -8,6 +8,7 @@ import getSingleTodoHandler from "./handlers/get-single-todo-handler";
 import createTodoHandler from "./handlers/create-todo-handler";
 import updateHandler from "./handlers/update-handler";
 import deleteTodoHandler from "./handlers/delete-todo-handler";
+import cors from "cors";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ const mongoUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/local";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 mongoose.connect(mongoUrl).then((_) => console.log("Connected to database"));
 
