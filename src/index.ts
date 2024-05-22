@@ -13,7 +13,7 @@ import cors from "cors";
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.PORT || 2000;
+const port = process.env.PORT || 8080;
 const mongoUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/local";
 
 app.use(express.json());
