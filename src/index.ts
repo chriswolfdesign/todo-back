@@ -14,7 +14,7 @@ dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 8080;
-const mongoUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/local";
+const mongoUrl = process.env.MONGO_URL || "mongodb://todo-back-todo-data-1/local";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
